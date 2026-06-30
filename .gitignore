@@ -23,7 +23,10 @@ Thumbs.db
 # Generated outputs and bulky local artifacts
 Artifacts/*
 !Artifacts/README.md
-Results/
+Results/*
+!Results/README.md
+!Results/Retrieval/
+!Results/Retrieval/**
 04_Results/
 cache/
 test/
@@ -60,3 +63,7 @@ Patch_Dataset/
 *.docx
 *.pptx
 *.xlsx
+
+# Published result artifacts explicitly kept for the report.
+!Results/Retrieval/**/*.png
+!Results/Retrieval/**/*.pdf

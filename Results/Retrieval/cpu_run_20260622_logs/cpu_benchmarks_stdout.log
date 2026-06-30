@@ -1,0 +1,121 @@
+Downloading: "https://download.pytorch.org/models/resnet18-f37072fd.pth" to C:\Users\Reacher/.cache\torch\hub\checkpoints\resnet18-f37072fd.pth
+{
+  "query_count": 36,
+  "accuracy_at": {
+    "1": 97.22222222222223,
+    "3": 100.0,
+    "5": 100.0
+  },
+  "precision_at": {
+    "1": 97.22222222222221,
+    "3": 60.185185185185176,
+    "5": 44.44444444444444
+  },
+  "recall_at": {
+    "1": 19.444444444444446,
+    "3": 36.11111111111111,
+    "5": 44.44444444444444
+  },
+  "top1_positive_count": 35,
+  "top1_center_error_m": {
+    "mean": 41.91342990231068,
+    "median": 0.0,
+    "max": 625.0
+  },
+  "runtime": {
+    "total_ms": 39.034400004311465,
+    "mean_ms": 1.0842888890086517,
+    "median_ms": 0.7212000018625986,
+    "max_ms": 10.301800000888761,
+    "mean_fps": 922.2634393259201
+  },
+  "tiles_evaluated": {
+    "mean": 97.97222222222223,
+    "median": 98.0,
+    "max": 98,
+    "early_stop_count": 0
+  },
+  "embedding_runtime_ms": 82026.74499999557,
+  "embedding_device": "cpu"
+}
+Wrote report to C:\Users\Reacher\Documents\University\Project\Project\04_Results\Retrieval\san_francisco_urban_allqueries_cpu_20260622\professor_retrieval_report.json
+{
+  "query_count": 196,
+  "accuracy_at": {
+    "1": 57.142857142857146,
+    "3": 68.87755102040816,
+    "5": 77.55102040816327
+  },
+  "precision_at": {
+    "1": 57.14285714285714,
+    "3": 22.95918367346939,
+    "5": 15.51020408163265
+  },
+  "recall_at": {
+    "1": 57.14285714285714,
+    "3": 68.87755102040816,
+    "5": 77.55102040816327
+  },
+  "top1_positive_count": 112,
+  "top1_center_error_m": {
+    "mean": 736.8427718921395,
+    "median": 0.0,
+    "max": 4474.319082273861
+  },
+  "runtime": {
+    "total_ms": 467.46000006532995,
+    "mean_ms": 2.3850000003333163,
+    "median_ms": 1.6390499949920923,
+    "max_ms": 57.664400002977345,
+    "mean_fps": 419.2872116814443
+  },
+  "tiles_evaluated": {
+    "mean": 195.28571428571428,
+    "median": 196.0,
+    "max": 196,
+    "early_stop_count": 0
+  },
+  "embedding_runtime_ms": 23508.778499999607,
+  "embedding_device": "cpu"
+}
+Wrote report to C:\Users\Reacher\Documents\University\Project\Project\04_Results\Retrieval\grand_canyon_mountains_allqueries_cpu_20260622\professor_retrieval_report.json
+{
+  "query_count": 625,
+  "accuracy_at": {
+    "1": 18.88,
+    "3": 38.24,
+    "5": 44.48
+  },
+  "precision_at": {
+    "1": 18.88,
+    "3": 16.746666666666666,
+    "5": 13.248
+  },
+  "recall_at": {
+    "1": 4.096,
+    "3": 10.794666666666666,
+    "5": 14.122666666666667
+  },
+  "top1_positive_count": 118,
+  "top1_center_error_m": {
+    "mean": 13112.26866523361,
+    "median": 8602.325267042626,
+    "max": 48846.698967279255
+  },
+  "runtime": {
+    "total_ms": 2299.3383999491925,
+    "mean_ms": 3.678941439918708,
+    "median_ms": 3.306500002508983,
+    "max_ms": 94.48990000237245,
+    "mean_fps": 271.81731928358624
+  },
+  "tiles_evaluated": {
+    "mean": 1219.704,
+    "median": 1241.0,
+    "max": 1250,
+    "early_stop_count": 0
+  },
+  "embedding_runtime_ms": 98044.140900005,
+  "embedding_device": "cpu"
+}
+Wrote report to C:\Users\Reacher\Documents\University\Project\Project\04_Results\Retrieval\iran_lut_kaluts_professor_scale_cpu_20260622\professor_retrieval_report.json
