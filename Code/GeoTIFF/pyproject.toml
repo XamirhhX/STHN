@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geotiff-scripts"
+version = "0.1.0"
+description = "Small GeoTIFF and STHN patch dataset generator from map tiles."
+requires-python = ">=3.11"
+dependencies = [
+  "rasterio",
+  "pyproj",
+  "mercantile",
+  "numpy",
+  "pillow",
+  "requests",
+  "h5py",
+  "tqdm",
+]
+
+[project.scripts]
+geotiff-scripts = "Scripts.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["Scripts*"]

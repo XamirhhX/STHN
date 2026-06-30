@@ -1,0 +1,856 @@
+--- PAGE 1 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 1
+STHN: Deep Homography Estimation for UA V
+Thermal Geo-localization with Satellite Imagery
+Jiuhong Xiao 1, Ning Zhang 2†, Daniel Tortei 2†, and Giuseppe Loianno 1
+Abstract—Accurate geo-localization of Unmanned Aerial Ve-
+hicles (UA Vs) is crucial for outdoor applications including search
+and rescue operations, power line inspections, and environmental
+monitoring. The vulnerability of Global Navigation Satellite
+Systems (GNSS) signals to interference and spoofing necessitates
+the development of additional robust localization methods for
+autonomous navigation. Visual Geo-localization (VG), leveraging
+onboard cameras and reference satellite maps, offers a promising
+solution for absolute localization. Specifically, Thermal Geo-
+localization (TG), which relies on image-based matching between
+thermal imagery with satellite databases, stands out by utilizing
+infrared cameras for effective nighttime localization. However,
+the efficiency and effectiveness of current TG approaches, are
+hindered by dense sampling on satellite maps and geometric
+noises in thermal query images. To overcome these challenges,
+we introduce STHN, a novel UA V thermal geo-localization ap-
+proach that employs a coarse-to-fine deep homography estimation
+method. This method attains reliable thermal geo-localization
+within a 512-meter radius of the UA V’s last known location even
+with a challenging 11% size ratio between thermal and satellite
+images, despite the presence of indistinct textures and self-similar
+patterns. We further show how our research significantly en-
+hances UA V thermal geo-localization performance and robustness
+against geometric noises under low-visibility conditions in the
+wild. The code is made publicly available.
+Index Terms—Deep Learning for Visual Perception, Aerial
+Systems: Applications, Localization
+SUPPLEMENTARYMATERIAL
+Project page:https://xjh19971.github.io/STHN/
+I. INTRODUCTION
+The increasing deployment of Unmanned Aerial Vehicles
+(UA Vs) across a diverse range of applications, including
+agriculture [1], search and rescue operations [2], tracking [3],
+power line inspections [4], and solar power plant inspec-
+tions [5], underscores the growing importance of robust UA V
+Manuscript received: March 28, 2024; Revised: June 24, 2024; Accepted:
+August 12, 2024. This paper was recommended for publication by Editor
+Cesar Cadena Lerma upon evaluation of the Associate Editor and Reviewers’
+comments. This work was supported by the Technology Innovation Institute,
+the NSF CAREER Award 2145277, the NSF CPS Grant CNS-2121391,
+and the NYU IT High Performance Computing resources, services, and
+staff expertise. Giuseppe Loianno serves as consultant for the Technology
+Innovation Institute. This arrangement has been reviewed and approved by the
+New York University in accordance with its policy on objectivity in research.
+†denotes equal contribution.
+1The authors are with the New York University, Brooklyn, NY 11201,
+USA.email:{jx1190, loiannog}@nyu.edu.
+2The authors are with the Autonomous Robotics Research
+Center-Technology Innovation Institute, Abu Dhabi, UAE.email:
+{ning.zhang, daniel.tortei}@tii.ae.
+Digital Object Identifier (DOI): see top of this page.
+Fig. 1: STHN framework for UA V thermal geo-localization
+with satellite maps. This framework achieves robust UA V
+thermal localization with a challenging size ratio of 11%
+between thermal and satellite images.
+localization for autonomous navigation to guarantee the effec-
+tive execution of these tasks. In outdoor environments, abso-
+lute localization technology [6] is crucial as reliance on relative
+localization methods can cause error accumulation over time,
+particularly during long-time missions or in scenarios lacking
+loop closure detection. While Global Navigation Satellite Sys-
+tems (GNSS) have become the preferred solutions, their relia-
+bility can be compromised by vulnerabilities to signal interfer-
+ence, jamming, and spoofing. Visual geo-localization [7]–[10]
+emerges as a significant alternative solution, utilizing onboard
+cameras to facilitate absolute localization and navigation. This
+approach aligns captured RGB imagery, taken from nadir (top-
+down) or oblique views, with an existing reference map (such
+as a satellite map), enabling accurate positioning in GNSS-
+denied environments. However, this approach poses significant
+challenges in low-visibility or nighttime environments.
+In response to these challenges, recent advancements in
+UA V thermal geo-localization [11] explore an image-based
+matching approach with an onboard thermal camera to match
+nadir-view images to satellite image crops from a database.
+However, this method encounters several drawbacks. Firstly,
+the localization accuracy is majorly influenced by the density
+of satellite image samples in the database. Reducing the
+sampling interval improves continuity between image crops
+and localization accuracy but increases computation time
+and memory usage for extensive sampling. Additionally, the
+approach has limited tolerance for thermal images that are not
+correctly north-aligned, with geometric distortions negatively
+impacting localization accuracy.
+Addressing these limitations, this study introduces Satellite-
+Thermal Homography Network (STHN) framework (see
+Fig. 1) that leverages deep homography estimation tech-
+niques [12]–[18] to directly align thermal images with satellite
+arXiv:2405.20470v3  [cs.RO]  26 Sep 2025
+
+--- PAGE 2 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 2
+maps of the local region, optimizing localization in GNSS-
+denied scenarios. This approach adopts a two-stage coarse-
+to-fine strategy: 1)Coarse alignment, which matches small
+thermal images to large satellite maps within a search radius
+of512 mwith a challenging constant size ratio of11%; and
+2)Refinement, which crops and resizes the selected region and
+applies a second-stage estimation for enhanced accuracy.
+The main contributions of this research are outlined as
+follows. First, we introduce for the first time a novel satellite-
+thermal Deep Homography Estimation (DHE) method based
+on an efficient coarse-to-fine approach tailored for UA V night-
+time Thermal Geo-localization (TG), eliminating the dense
+satellite map sampling requirement of [11]. Second, we in-
+troduce the Thermal Generative Module (TGM) [11] into our
+DHE framework, improving the alignment between thermal
+and satellite images with significant scale change using limited
+satellite-thermal paired data. Third, we validate our approach
+by considering extensive and comprehensive experiments in
+challenging scenarios where thermal images have indistinct
+self-similar features on the deserts and a low overlap rate
+(11%) with satellite images. We demonstrate the superior
+performance of our method over state-of-the-art real-time DHE
+methods and better efficiency and accuracy over image-based
+matching methods. Our results also demonstrate that STHN
+can effectively tolerate and estimate certain geometric noises
+including rotation, resizing, and perspective transformation
+noises for thermal geo-localization. To our knowledge, this is
+the first deep homography estimation solution for UA V ther-
+mal geo-localization, facilitating reliable nighttime localization
+over long-distance outdoor flights.
+II. RELATEDWORKS
+UA V Visual and Thermal Geo-localization.UA V visual
+geo-localization technology has been explored by multiple
+works based on: 1) Template matching methods [19], [20] per-
+form dense image alignment to optimize the image similarity
+measures; 2) Traditional keypoint matching methods [10], [21]
+extract and match the keypoints using hand-crafted detector
+and descriptors; and 3) Deep-learning-based matching meth-
+ods [7], [8], [22]–[24] utilize deep neural network [25] to gen-
+erate robust matching features against environmental noises.
+For UA V thermal localization with nadir views, [26], [27]
+adopt Thermal Inertial Odometry (TIO) for navigating short-
+distance outdoor flights. For long-distance geo-localization,
+[28] uses keypoint-based visible-thermal image registration,
+whereas [11] employs image-based matching with generative
+models and domain adaptation for enhanced cross-spectral
+geo-localization with limited training data. Despite the effi-
+ciency of keypoint-based methods, their reliance on repeatable
+cross-spectral local features limits their applicability. In con-
+trast, image-based matching methods [11], [29], free from this
+requirement, face challenges with exhaustive searches and high
+memory demands, with performances that are heavily depen-
+dent on satellite database density. Our research diverges by in-
+troducing deep homography estimation for precise satellite and
+thermal image alignment, presenting a novel geo-localization
+framework that surpasses prior limitations by eliminating the
+necessity for repeatable local features or exhaustive searches,
+improving accuracy and efficiency.
+Deep Homography Estimation.Deep homography es-
+timation is first proposed by [13], which uses four-corner
+displacement as the parametrization of homography estimation
+and four-corner perturbed images to train the model. [14] de-
+velops a content-aware deep homography estimation approach
+against the noise from the dynamic dominant foreground. [15]
+employs inverse compositional Lucas-Kanade algorithms for
+multi-modal image alignment. In [16], the authors propose
+LocalTrans to conduct cross-resolution homography estima-
+tion. [12] shows an iterative process to iteratively refine the
+homography estimation results in real-time, whereas [17] uses
+a focus transformer for global and local correlation to enhance
+estimation performance. Considering UA V localization, [30]
+proposes to use an unsupervised approach with photomet-
+ric consistency loss for warped aerial RGB images while
+requiring about65%overlap between two source images.
+For thermal imagery, [31] employs a multi-scale conditional
+GAN architecture [32] to conduct thermal-visible homography
+estimation. The subsequent work [33] shifts to a coarse-to-
+fine paradigm to further improve the estimation performance.
+However, the previous works commonly require a minimum
+overlap of25%and, in rare instances, exactly25%. Compared
+to these works, our approach adopts a coarse-to-fine paradigm
+but considers coarse estimation across images with major scale
+change for large search regions. This results in a challenging
+constant11%size ratio. For refinement, our approach differs
+from [12], [15], [16], [33], which typically upsample aligned
+images. Given the small size ratio of the thermal image, a
+large portion of the satellite image becomes redundant and
+can even hinder the refinement process. Instead, we crop
+the selected satellite region and perform estimation without
+increasing image resolution to enhance efficiency.
+III. METHODOLOGY
+Our STHN framework, shown in Fig. 2, has three main
+components: Thermal Generative Module (TGM), coarse
+alignment module, and refinement module.
+A. Thermal Generative Module (TGM)
+We employ TGM [11] to enhance our training dataset with
+synthetic thermal images derived from satellite images. In
+the data preparation phase, we denoteI OS andI OT as the
+pair of satellite and 8-bit thermal images from the original
+dataset, andI GS as the satellite images without paired thermal
+images. We train TGM with the inputI OS and target output
+IOT following pix2pix [34] approach. After training TGM,
+we generate synthetic thermal imagesI GT using TGM and
+IGS, and combineI OS andI OT to build an extended satellite-
+thermal dataset. We denote the quantity of actual thermal
+images asN T and those generated asN G. We restrict our
+sampling from the generated dataset per epoch toN T instances
+to mitigate bias towardsI GT , given thatN T ≪N G.
+B. Coarse-to-fine Iterative Homography Estimation
+Our coarse-to-fine strategy is divided into two stages:
+Coarse alignment and refinement.
+
+--- PAGE 3 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 3
+TGM
+Extended Dataset
+Data Preparation Phase Deep Homography Estimation Phase
+Correlation
+ModuleCNN Iterative
+Updater
+Crop and
+Resize
+Original Dataset
+Refinement Stage
+Real thermal data
+Real satellite data
+Generated thermal data
+Resized satellite images
+Resized cropped satellite images by  
+Resized thermal images
+Feature maps
+Correlation volumesDisplacements
+Update of displacements
+Cropping bounding box
+Correlation
+ModuleCNN Iterative
+Updater
+Coarse Alignment Stage
+Fig. 2: STHN Framework Overview: For the data preparation phase, TGM produces synthetic thermal images from unpaired
+satellite images, augmenting the dataset. The deep homography estimation phase employsF H for the Coarse Alignment Stage
+by predicting the displacementD RS→RT between thermal images and satellite maps. For the Refinement Stage , the framework
+crops and resizes the selected regionB, utilizingF ′
+H to fine-tune the four-corner displacement prediction for enhanced accuracy.
+1) Coarse Alignment Stage:We denoteW S as the width
+of input square satellite imagesI S andW T as that of input
+square 8-bit thermal imagesI T . For pre-processing, we resize
+IS andI T toI RS andI RT at the side length ofW R, and the
+resize ratios ofI RS isα=W S/WR. Then, we run the model
+DRS→RT =F H(IRS, IRT ),(1)
+whereD RS→RT ∈R 2×4 is the displacement from the four
+corners ofI RS to those ofI RT andF H is the homogra-
+phy estimation model. In other words,D RS→RT alignsI RT
+intoI RS.F H follows an iterative estimation paradigm [12],
+which consists of three modules: A Convolutional Neural Net-
+work (CNN) [25] feature extractor (multiple residual blocks
+with multi-layer CNNs and instance normalization) outputs
+the feature mapF RS,F RT ∈R C× WR
+4 × WR
+4 (C= 256),
+a correlation module outputs correlation volumes [35]C
+( WR
+4 × WR
+4 × WR
+4 × WR
+4 ) andC
+1
+2 ( WR
+4 × WR
+4 × WR
+8 × WR
+8 ), and an
+iterative homography estimator (multi-layer CNNs with group
+normalization) provides updates of displacement∆D RS→RT .
+At iterationk,D RS→RT is updated as
+Dk+1,RS→RT =D k,RS→RT + ∆Dk,RS→RT .(2)
+Since the images are resized during pre-processing, the dis-
+placement of the coarse alignment stage on the scale ofI S is
+D′
+S→T =αD RS→RT . For the loss function, we minimize the
+L1 distance between the predicted displacementsD k,RS→RT
+and ground truth onesD gt
+k,RS→RT with exponential decay as
+Lcoarse =
+K1−1X
+k=0
+γK1−k−1∥Dk,RS→RT −D gt
+k,RS→RT ∥1,(3)
+whereK 1 is the number of updates in the coarse alignment.
+DRS→RT =D K1,RS→RT . The decay factorγis0.85.
+2) Refinement Stage:We create a bounding boxBthat
+bounds the corners of thermal images warped byD ′
+S→T .
+We setBorthogonal to the image frame to ensure complete
+coverage of the target region, even if the coarse alignment
+result has rotation or perspective transformation errors. We
+denoteD S→B ∈R 2×4 as the four-corner displacement from
+IS toB. We crop out the region ofBto getI B at the side
+length ofW B and resize it toI RB at the side length ofW R.
+The resize ratio isη=W B/WR. The refinement process is
+DRB→RT =F ′
+H(IRB, IRT ),(4)
+whereF ′
+H has the same structure asF H with iterative updates
+(see Eq. 2) but does not share weights andD RB→RT ∈R 2×4
+are four-corner displacement fromI RB toI RT . We setκ=
+η/αand the loss function is
+Lfine =
+K2−1X
+k=0
+γK2−k−1κ∥Dk,RB→RT −D gt
+k,RB→RT ∥1,(5)
+whereD k,RB→RT andD gt
+k,RB→RT are predicted and ground
+truth displacements, andK 2 is the number of updates in the
+refinement.κmaps the displacement from the scale ofI RB to
+the scale ofI RS, aligning withL coarse. The total loss function
+is
+L=L coarse +L fine.(6)
+The displacement of the refinement stage on the scale ofI S
+isD B→T =ηD RB→RT . Combining the two stages’ results,
+we get final displacements
+DS→T =D S→B +D B→T .(7)
+
+--- PAGE 4 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 4
+WithD S→T , we use Direct Linear Transformation (DLT) [36]
+to solve the homography matrixH∈R 3×3. The geo-
+localization center coordinate(x c, yc)is calculated as
+(xc, yc,1) ⊤ =H×
+ WS
+2 , WS
+2 ,1
+⊤
+.(8)
+C. Two-stage Training Strategy
+For training the two-stage model, we first train the coarse
+alignment module from scratch, and then we attach the re-
+finement module to the end of the coarse alignment module
+and jointly fine-tune the two modules. We discovered that
+augmenting the bounding boxBis crucial for effectively fine-
+tuning the refinement module. This requirement arises because
+the refinement module always tends to make no or only minor
+adjustments if the coarse alignment already performs well
+on training and validation sets. Furthermore, we observe that
+merely fixedly expanding the cropped boxes without random
+shifting and enlargement does not enhance performance. To
+boost the refinement module’s effectiveness, we augmentBby
+shifting the center coordinates(x B, yB)by(∆p 1,∆p 2)and
+expanding the widthW B by2∆p 3 during training. During
+the evaluation phase, we consistently expandW B by∆p 4 to
+mitigate the potential offset error of the coarse alignment.
+IV. EXPERIMENTALSETUP
+A. Dataset
+For training and evaluation, our study utilizes the Boson-
+nighttime [11] real-world dataset which contains10,256train
+pairs,13,011validation pairs, and26,568test pairs of coupled
+satellite RGB and nadir-view 8-bit thermal imagery. We have
+expanded the dataset by augmenting the collection of satellite
+images without corresponding thermal images from79,950
+to163,344images, covering an area of215.78 km 2. This
+enhancement focuses on the desert and farm areas near the
+original dataset’s sampling region, thereby incorporating a
+broader spectrum of geographical patterns. Additionally, the
+test region is then excluded from the generated data to ensure
+a robust evaluation of generalization performance. The thermal
+images in the dataset are captured between 9:00 PM and 4:00
+AM, and they are aligned with an approx. spatial resolution
+of1 m/px. The thermal images are cropped toW T ×W T
+pixels (px), whereW T = 512. The satellite images 1 are
+cropped toW S ×W S. Fig. 3 shows the ground truth overlap
+between thermal images and satellite images with different
+WS. ForW S = 512/1024/1536, the size ratios between
+thermal images and satellite images are100%,25%, and11%.
+B. Metrics
+We deploy two accuracy metrics in our evaluation: Mean
+Average Corner Error (MACE) and Center Error (CE). MACE,
+extensively adopted in [12], [13], [17], measures the mean
+value of the average distances between the four corners of
+estimated and ground truth image alignments. Conversely, CE
+measures the mean value of the distances between the center
+points of predicted thermal image displacements and ground
+truth ones, thereby measuring geo-localization accuracy.
+1Bing RGB satellite imagery is sourced from Maxar: https://www.bing.
+com/maps/aerial
+Satellite (W S = 512)
+Thermal
+WS = 512
+WS = 1024
+WS = 1536
+Fig. 3: The example images of Boson-nighttime dataset. The
+1st row and2 nd row are input satellite and thermal images. The
+3rd-5th rows are the ground truth overlap between satellite and
+thermal images with differentW S.
+In our experimental analysis, the maximum spatial distance
+between the center points of input thermal and satellite images
+DC emerges as a critical factor influencing estimation perfor-
+mance. Intuitively, a largerD C implies a greater translation
+from the center required for the four-corner displacement,
+which in turn becomes more challenging to predict accurately.
+To validate the robustness of our method, we cautiously ablate
+results across a spectrum ofD C, demonstrating our approach’s
+capability under varying degrees of challenging translations.
+C. Implementation Details
+For pre-processing, the resize side lengthW R is256 px.
+The training iteration numbers of the coarse alignment and
+refinement modules are200000with a batch size of16.
+The AdamW optimizer [37] is employed for model training,
+utilizing a linear learning rate decay scheduler with warmup
+with the peak learning rate at1e−4. The numbers of iterative
+updatesK 1 andK 2 are both set to6. Depending on the
+setting, the correlation module’s level is2(forW S = 512)
+or4(forW S = 1024,1536) with a search radius of4.
+For bounding box augmentation,∆p 1,∆p 2 is set to vary
+between(−64,64),∆p 3 is set within[0,64), and∆p 4 is
+64by parameter tuning. For geometric noises, we extend
+the coverage of thermal images, apply corresponding data
+augmentations, and center crop the thermal images to avoid
+black padding on their boundary. Our models are developed
+using PyTorch. The inference speed is measured with one
+NVIDIA RTX-2080-Ti GPU.
+
+--- PAGE 5 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 5
+TABLE I: Comparison of test MACE (m) between different homography estimation methods across differentD C. ”Identity”
+indicates the error if no homography estimation is applied. If not specified, the methods are evaluated withW S = 512.
+MethodsD C = 50 mD C = 64 mD C = 128 mD C = 256 mD C = 512 mFailure Rate
+Traditional Keypoint Matching Methods
+Identity 35.63 39.08 85.63 170.94 334.68 -
+SIFT [38] + RANSAC [39] 442.20 654.77 547.29 529.63 1650.46 99.6%
+SIFT [38] + MAGSAC++ [40] 512.60 438.54 529.46 561.64 693.03 99.7%
+ORB [41] + RANSAC [39] 720.80 733.69 733.94 4614.84 975.83 82.6%
+ORB [41] + MAGSAC++ [40] 784.12 558.51 564.63 524.99 573.72 82.9%
+BRISK [42] + RANSAC [39] 503.25 771.21 665.94 974.80 591.17 95.5%
+BRISK [42] + MAGSAC++ [40] 536.52 487.95 722.76 1948.99 568.24 95.6%
+Learned Keypoint Matching Methods
+R2D2 [43] + RANSAC [39] 994.31 1160.73 1160.21 2400.31 2902.81 88.9%
+LoFTR [44] + RANSAC [39] 1123.74 1697.33 1317.69 1269.71 2564.65 0%
+Deep Homography Estimation Methods
+DHN [13] 16.78 20.43 77.68 197.27 457.23 0%
+LocalTrans [16] 33.31 37.29 86.04 166.52 338.21 0%
+IHN [12] 5.91 7.81 51.74 190.93 367.24 0%
+Ours (W S = 512)4.24 4.9314.97 142.71 347.50 0%
+Ours (W S = 1024) 4.92 5.316.03 9.2286.74 0%
+Ours (W S = 1536) 6.50 7.04 7.27 16.78 16.42 0%
+Ours (W S = 1536+ two stages) 7.51 7.20 7.51 14.9912.700%
+TABLE II: Comparison between different image-based match-
+ing methods and our estimation method whenD C = 512 m.
+Methods Test CE (m) Latency (ms)
+Image-based Matching Methods
+AnyLoc-VLAD-DINOv2 [29] 258.21 352404.03
+STGL-NetVLAD-ResNet50 [11], [45] 89.31 7180.0
+STGL-GeM-ResNet50 [11], [46] 13.52 4918.9
+Deep Homography Estimation Methods
+Ours (W S = 1536) 15.9035.2
+Ours (W S = 1536+ two stages)12.1263.9
+V. RESULTS
+In Sections V-A and V-B, we assume that thermal images
+are aligned to the north, facilitated by an onboard compass and
+a gimbaled thermal camera. Subsequently, in Section V-C, we
+broaden our analysis for geometric noises.
+A. Comparison with Baselines
+In the results detailed in Table I, we initiate the analysis
+by evaluating the efficacy of traditional keypoint matching
+methods, such as SIFT [38], ORB [41], and BRISK [42],
+integrated with outlier rejection methods like RANSAC [39]
+and MAGSAC++ [40]. We also evaluate learned keypoint
+methods including R2D2 [43] trained on our dataset and
+LoFTR [44] with pretrained weights. These methods demon-
+strate a significantly high MACE alongside substantial failure
+rates (calculated by instances where the number of matching
+keypoints≤10). This underlines the challenges of keypoint
+matching inherent in complex satellite-thermal alignment.
+Subsequently, our analysis compares our methods with
+various deep homography estimation frameworks, including
+DHN [13], LocalTrans [16], and IHN [12] (state-of-the-art
+method in real-time applications). These baselines with one-
+stage models are trained on the Boson-nighttime dataset. We
+report the baseline results consideringW S = 512as repre-
+sentative results since otherW S show similar trends in our
+analysis. The results show the superior performance of our ap-
+proach for satellite-thermal alignment and geo-localization. A
+notable observation from the data is the different performance
+preferences across varyingD C distances: forD C = 50 m
+andD C = 64 m, the optimalW S is512, while for mid-
+range distances ofD C = 128 mandD C = 256 m, using
+WS = 1024leads to the best results. Additionally, for the
+longest distance ofD C = 512 m, our novel two-stage method
+withW S = 1536emerges as the most effective strategy. The
+findings indicate that for cases whereD C ≤256 m, employing
+our one-stage method combined with a carefully chosenW S
+emerges as the most effective strategy. Further explanation of
+the correlation betweenW S andD C is in Section V-B.
+We find that our two-stage method fails to enhance per-
+formance for distancesD C = 50 m,64 m, and128 m,
+instead leading to a decline in accuracy. Upon examining the
+visualized outcomes, we observe that for smaller distances
+(DC ≤128 m), the initial coarse alignment is sufficiently
+accurate, making the refinement module’s excessive iterative
+updates introduce noise into the final predictions, thereby
+degrading performances. Nevertheless, our two-stage approach
+maintains an overall MACE of less than15 macross all
+consideredD C, establishing robust baselines for this task. No-
+tably, for achieving precise geo-localization atD C = 512 m,
+this two-stage strategy demonstrates the best performance,
+underscoring its effectiveness for large-scale search regions.
+We also compare with image-based solutions (AnyLoc [29]
+and STGL [11]) on accuracy and latency aspects in Table II.
+The latency of image-based matching methods is calculated
+byt e ×(N S + 1) +t m, wheret e is feature extraction time
+per image, andN S = 841is the number of database images
+centered within a1024×1024area (while the complete images
+cover a1536×1536area) with a sampling stride of35px
+following [11], andt m is the matching time per query. For
+AnyLoc, we directly apply the original DINOv2 [47] weights
+and fit the VLAD [48] parameters using our training data. We
+observe a significant performance decline in AnyLoc, likely
+due to the domain gap between satellite and thermal imagery.
+STGL with GeM yields high accuracy but still suffers from
+high latency. Our method exhibits significant enhancements in
+
+--- PAGE 6 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 6
+Fig. 4: Effectiveness of TGM in deep homography estimation
+across differentD C whenW S = 512. Validation MACE (Val
+MACE) is plotted on a log scale.
+both accuracy and latency compared to these existing image-
+based matching techniques. Notably, our one-stage and two-
+stage methods achieve latency reductions to just7.2%and
+13.0%of the latency of STGL-GeM-ResNet50.
+B. Ablation Study
+In this study (Figs. 4-6), we focus on the following questions
+•How does the incorporation of TGM affect the accuracy
+of homography estimation across varyingD C?
+•Is the coarse alignment effective in achieving satisfactory
+localization accuracy for largeD C?
+•Is the bounding box augmentation effective for fine-
+tuning the refinement module?
+1) Effectiveness of TGM:Fig. 4 demonstrates the effec-
+tiveness of TGM in improving deep homography estimation
+over different spatial distances between centers (D C) on
+the validation set. It showcases TGM’s ability to enhance
+estimation accuracy by generating synthetic thermal images
+for satellite imagery that lacks paired thermal data. This con-
+sistent enhancement in image-based matching [11] and deep
+homography estimation for satellite-thermal matching suggests
+TGM’s potential applicability in additional computer vision
+tasks that do not have direct thermal imaging counterparts.
+2) Coarse alignment:Fig. 5 illustrates the correlation be-
+tween validation MACE andW S across variousD C. The
+figure shows that asW S increases, the validation MACE for
+smaller translation distances (D C = 50 mand64 m) slightly
+increases, suggesting a deterioration in alignment accuracy.
+In contrast, for larger translation distances (D C = 128 m,
+256 m,512 m), the validation MACE decreases, indicating
+improved alignment accuracy. The intuition is that an increase
+inW S, without a corresponding adjustment inW R, leads to a
+higher pixel-per-meter (ppm) ratio after image resizing. This
+increment in ppm ratio can negatively affect the alignment ac-
+curacy. Conversely, a largerW S enhances alignment accuracy
+for greater translation (D C), especially forW S = 1536and
+DC = 512 m. In these cases, a largerW S ensures the full
+coverage of the thermal image, which is crucial for accurately
+calculating correlation volumesC.
+512 1024 1536
+WS
+0.0
+2.5
+5.0
+7.5
+10.0
+12.5
+15.0
+17.5
+20.0
+val MACE ( m)
+DC
+50
+64
+128
+256
+512
+Fig. 5: Coarse alignment under large-scale (W S = 1536),
+median-scale (W S = 1024), small-scale (W S = 512) satellite
+images with TGM.
+3) Effectiveness of Bounding Box Augmentation:We
+present a qualitative comparison in Fig. 6 to demonstrate the
+impact of fine-tuning with and without bounding box aug-
+mentation (bbox aug). Given that bounding box augmentation
+requires an expansion of the bounding box (bbox exp) during
+the evaluation phase, we also include results featuring solely
+bbox exp without bbox aug to ablate the effects. The findings
+illustrate that in the absence of augmentation, the refinement
+module tends to make only minimal adjustments when not
+trained with bbox exp. On the other hand, if we train the
+refinement module with only bbox exp, it always tends to
+reduce the size of the predicted box towards the center, rather
+than correctly repositioning it. However, the incorporation of
+augmentation addresses these limitations by augmenting the
+width and the center coordinates of the region.
+C. Robustness Evaluation and Visualization
+Ideally, the UA V onboard compass and gimbal camera
+would supply precise data, enabling the accurate alignment of
+images to the north. However, it is crucial for our algorithm to
+demonstrate tolerance towards certain rotation and perspective
+transformation inaccuracies during active flights. Additionally,
+understanding how our algorithm performs when there is a
+change in flight altitude—which results in a change of the
+thermal image’s coverage area, denoted as resizing noise—is
+essential. To assess the algorithm’s robustness under these
+conditions, we perform experiments that introduce specific
+rotation, resizing, and perspective transformation noises. For
+rotation disturbances, the thermal images undergo random
+rotations up to5 ◦,10 ◦, or30 ◦. For resizing disturbances,
+the images are randomly scaled by a factor of1 + ∆r, with
+∆rvarying within either±0.1,±0.2, or±0.3. For perspec-
+tive transformation, we randomly adjust the four corners of
+512×512thermal images up to8 px,16 px, or32 px.
+In Table III, we evaluate the robustness of our one-stage
+and two-stage strategies against a variety of geometric noise
+conditions withD C = 512 mandW S = 1536. The
+analysis indicates a significant decrease in performance for the
+
+--- PAGE 7 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 7
+w/o bbox aug
+w/ bbox exp
+w/ bbox aug
+Fig. 6: The qualitative comparison between finetuning the
+refinement module without bbox aug, with only bbox exp,
+and with bbox aug withW S = 1536. Green boxes are the
+ground truth, blue boxes are the bounding boxes from coarse
+alignment, and red boxes are final predictions after refinement.
+one-stage method under these conditions, in contrast to the
+two-stage strategy, which demonstrates a notable robustness
+against geometric perturbations. Specifically, the two-stage
+strategy effectively maintains test MACE below22 mand test
+CE below20 min most scenarios, with notable exceptions
+being in instances of30 ◦ rotation noise. While incremental
+perspective transformations and resizing have minimal impact
+on accuracy, large rotation noise can significantly degrade
+performance. This suggests the tolerance of our strategies to
+different types of geometric noise. Overall, the results validate
+our method’s robustness and its ability to estimate these
+disturbances, underscoring the two-stage strategy’s superior
+effectiveness and reliability in mitigating the negative effects
+of these disturbances. Fig. 7 further illustrates this point by
+showcasing visual comparisons between the failure instances
+of the one-stage method and the success cases of the two-stage
+method, demonstrating the latter’s improved robustness.
+VI. CONCLUSIONS
+This paper presents a novel deep homography estimation
+approach for UA V thermal geo-localization tasks. We validate
+the capability of STHN to precisely align thermal images, cap-
+tured by UA V onboard sensors, with large-scale satellite maps,
+achieving successful alignment even with a size ratio of11%.
+Additionally, we showcase STHN’s superior performances in
+terms of speed and accuracy with respect to several state-
+of-the-art approaches as well as its resilience to geometric
+distortions, which significantly enhances the reliability of geo-
+localization outcomes.
+Our future endeavors will aim to develop a hierarchical geo-
+localization framework. This framework will integrate deep
+homography estimation for local matching with image-based
+matching techniques for broad-scale global matching, thereby
+building up universal geo-localization solutions.
+TABLE III: Robustness evaluation with geometric noises,
+including rotation, resizing, and perspective transformation
+noises whenD C = 512m andW S = 1536. ”Baseline” is
+our method with only translation.
+Ours (one stage) Ours (two stages)
+Test MACE (m) Test CE (m) Test MACE (m) Test CE (m)
+Baseline 16.42 15.90 12.70 12.12
+Rotation Noises
+5◦ 31.82 27.00 14.48 11.42
+10◦ 33.78 28.40 14.55 11.90
+30◦ 64.63 56.98 33.48 28.93
+Resizing Noises
+0.132.00 27.38 13.03 11.20
+0.236.79 31.88 15.16 13.23
+0.346.22 40.50 21.68 19.36
+Perspective Transformation Noises
+8 px30.53 26.41 13.70 10.94
+16 px34.07 27.22 16.24 11.73
+32 px44.03 30.35 20.90 14.11
+REFERENCES
+[1] D. C. Tsouros, S. Bibi, and P. G. Sarigiannidis, “A review on uav-based
+applications for precision agriculture,”Information, vol. 10, no. 11, p.
+349, 2019.
+[2] M. P ´ołka, S. Ptak, and Łukasz Kuziora, “The use of uav’s for search
+and rescue operations,”Procedia Engineering, vol. 192, pp. 748–752,
+2017, 12th international scientific conference of young scientists on
+sustainable, modern and safe transport.
+[3] A. Saviolo, P. Rao, V . Radhakrishnan, J. Xiao, and G. Loianno, “Unify-
+ing foundation models with quadrotor control for visual tracking beyond
+object categories,” inIEEE International Conference on Robotics and
+Automation (ICRA), 2024.
+[4] J. Xing, G. Cioffi, J. Hidalgo-Carri ´o, and D. Scaramuzza, “Autonomous
+power line inspection with drones via perception-aware mpc,” in
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS), 2023, pp. 1086–1093.
+[5] L. Morando, C. T. Recchiuto, J. Calla, P. Scuteri, and A. Sgorbissa,
+“Thermal and visual tracking of photovoltaic plants for autonomous uav
+inspection,”Drones, vol. 6, no. 11, 2022.
+[6] A. Couturier and M. A. Akhloufi, “A review on absolute visual localiza-
+tion for uav,”Robotics and Autonomous Systems, vol. 135, p. 103666,
+2021.
+[7] Y . He, I. Cisneros, N. Keetha, J. Patrikar, Z. Ye, I. Higgins, Y . Hu,
+P. Kapoor, and S. Scherer, “Foundloc: Vision-based onboard aerial
+localization in the wild,”arXiv preprint arXiv:2310.16299, 2023.
+[8] A. T. Fragoso, C. T. Lee, A. S. McCoy, and S.-J. Chung, “A seasonally
+invariant deep transform for visual terrain-relative navigation,”Science
+Robotics, vol. 6, no. 55, p. eabf3320, 2021.
+[9] B. Patel, T. D. Barfoot, and A. P. Schoellig, “Visual localization with
+google earth images for robust global pose estimation of uavs,” inIEEE
+International Conference on Robotics and Automation (ICRA), 2020, pp.
+6491–6497.
+[10] M. Shan, F. Wang, F. Lin, Z. Gao, Y . Z. Tang, and B. M. Chen, “Google
+map aided visual navigation for uavs in gps-denied environment,” in
+IEEE International Conference on Robotics and Biomimetics (ROBIO),
+2015, pp. 114–119.
+[11] J. Xiao, D. Tortei, E. Roura, and G. Loianno, “Long-range uav thermal
+geo-localization with satellite imagery,” inIEEE/RSJ International Con-
+ference on Intelligent Robots and Systems (IROS), 2023, pp. 5820–5827.
+[12] S.-Y . Cao, J. Hu, Z. Sheng, and H.-L. Shen, “Iterative deep homography
+estimation,” inProceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition (CVPR), 2022, pp. 1879–1888.
+[13] D. DeTone, T. Malisiewicz, and A. Rabinovich, “Deep image homogra-
+phy estimation,”arXiv preprint arXiv:1606.03798, 2016.
+[14] J. Zhang, C. Wang, S. Liu, L. Jia, N. Ye, J. Wang, J. Zhou, and
+J. Sun, “Content-aware unsupervised deep homography estimation,” in
+Computer Vision – ECCV 2020, A. Vedaldi, H. Bischof, T. Brox, and
+J.-M. Frahm, Eds. Cham: Springer International Publishing, 2020, pp.
+653–669.
+[15] Y . Zhao, X. Huang, and Z. Zhang, “Deep lucas-kanade homography
+for multimodal image alignment,” inProceedings of the IEEE/CVF
+conference on computer vision and pattern recognition (CVPR), 2021,
+pp. 15 950–15 959.
+
+--- PAGE 8 ---
+IEEE ROBOTICS AND AUTOMATION LETTERS. PREPRINT VERSION. ACCEPTED AUGUST, 2024 8
+One stage
+Two stages
+Fig. 7: Visualization results with geometric noises for our one-stage and two-stage methods withW S = 1536andD C = 512m.
+Green boxes are the ground truth, blue boxes are the bounding boxes from coarse alignment for our two-stage method, and
+red boxes are the final predictions of one-stage and two-stage methods. The1 st-2nd columns show rotation noises, the3 rd-4th
+columns show resizing noises, and the5 th-8th columns show perspective transformation noises.
+[16] R. Shao, G. Wu, Y . Zhou, Y . Fu, L. Fang, and Y . Liu, “Localtrans: A
+multiscale local transformer network for cross-resolution homography
+estimation,” inProceedings of the IEEE/CVF international conference
+on computer vision (CVPR), 2021, pp. 14 890–14 899.
+[17] S.-Y . Cao, R. Zhang, L. Luo, B. Yu, Z. Sheng, J. Li, and H.-L.
+Shen, “Recurrent homography estimation using homography-guided
+image warping and focus transformer,” inProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition (CVPR), June
+2023, pp. 9833–9842.
+[18] H. Le, F. Liu, S. Zhang, and A. Agarwala, “Deep homography estimation
+for dynamic scenes,” inProceedings of the IEEE/CVF conference on
+computer vision and pattern recognition (CVPR), 2020, pp. 7652–7661.
+[19] G. J. V . Dalen, D. P. Magree, and E. N. Johnson, “Absolute localiza-
+tion using image alignment and particle filtering,” inAIAA Guidance,
+Navigation, and Control Conference, 2016.
+[20] A. Yol, B. Delabarre, A. Dame, J.-E. Dartois, and E. Marchand, “Vision-
+based absolute localization for unmanned aerial vehicles,” inIEEE/RSJ
+International Conference on Intelligent Robots and Systems (IROS),
+2014, pp. 3429–3434.
+[21] M. Mantelli, D. Pittol, R. Neuland, A. Ribacki, R. Maffei, V . Jorge,
+E. Prestes, and M. Kolberg, “A novel measurement model based on
+abbrief for global localization of a uav over satellite images,”Robotics
+and Autonomous Systems, vol. 112, pp. 304–319, 2019.
+[22] A. Shetty and G. X. Gao, “Uav pose estimation using cross-view ge-
+olocalization with satellite imagery,” inIEEE International Conference
+on Robotics and Automation (ICRA), 2019, pp. 1827–1833.
+[23] H. Goforth and S. Lucey, “Gps-denied uav localization using pre-existing
+satellite imagery,” inIEEE International Conference on Robotics and
+Automation (ICRA), 2019, pp. 2974–2980.
+[24] M. Bianchi and T. D. Barfoot, “Uav localization using autoencoded
+satellite images,”IEEE Robotics and Automation Letters, vol. 6, no. 2,
+pp. 1761–1768, 2021.
+[25] Y . LeCun, Y . Bengio, and G. Hinton, “Deep learning,”nature, vol. 521,
+no. 7553, pp. 436–444, 2015.
+[26] J. Delaune, R. Hewitt, L. Lytle, C. Sorice, R. Thakker, and L. Matthies,
+“Thermal-inertial odometry for autonomous flight throughout the night,”
+inIEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS), 2019, pp. 1122–1128.
+[27] V . Polizzi, R. Hewitt, J. Hidalgo-Carri ´o, J. Delaune, and D. Scaramuzza,
+“Data-efficient collaborative decentralized thermal-inertial odometry,”
+IEEE Robotics and Automation Letters, vol. 7, no. 4, pp. 10 681–10 688,
+2022.
+[28] F. Achermann, A. Kolobov, D. Dey, T. Hinzmann, J. J. Chung,
+R. Siegwart, and N. Lawrance, “Multipoint: Cross-spectral registration
+of thermal and optical aerial imagery,” inProceedings of the 2020
+Conference on Robot Learning, ser. Proceedings of Machine Learning
+Research, J. Kober, F. Ramos, and C. Tomlin, Eds., vol. 155. PMLR,
+16–18 Nov 2021, pp. 1746–1760.
+[29] N. Keetha, A. Mishra, J. Karhade, K. M. Jatavallabhula, S. Scherer,
+M. Krishna, and S. Garg, “Anyloc: Towards universal visual place
+recognition,”IEEE Robotics and Automation Letters, vol. 9, no. 2, pp.
+1286–1293, 2023.
+[30] T. Nguyen, S. W. Chen, S. S. Shivakumar, C. J. Taylor, and V . Kumar,
+“Unsupervised deep homography: A fast and robust homography esti-
+mation model,”IEEE Robotics and Automation Letters, vol. 3, no. 3,
+pp. 2346–2353, 2018.
+[31] Y . Luo, X. Wang, Y . Wu, and C. Shu, “Infrared and visible image ho-
+mography estimation using multiscale generative adversarial network,”
+Electronics, vol. 12, no. 4, 2023.
+[32] M. Mirza and S. Osindero, “Conditional generative adversarial nets,”
+arXiv preprint arXiv:1411.1784, 2014.
+[33] X. Wang, Y . Luo, Q. Fu, Y . He, C. Shu, Y . Wu, and Y . Liao,
+“Coarse-to-fine homography estimation for infrared and visible images,”
+Electronics, vol. 12, no. 21, 2023.
+[34] P. Isola, J.-Y . Zhu, T. Zhou, and A. A. Efros, “Image-to-image translation
+with conditional adversarial networks,” inIEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), 2017, pp. 1125–
+1134.
+[35] Z. Teed and J. Deng, “Raft: Recurrent all-pairs field transforms for
+optical flow,” inComputer Vision – ECCV 2020, A. Vedaldi, H. Bischof,
+T. Brox, and J.-M. Frahm, Eds. Cham: Springer International Publish-
+ing, 2020, pp. 402–419.
+[36] Y . I. Abdel-Aziz, H. M. Karara, and M. Hauck, “Direct linear trans-
+formation from comparator coordinates into object space coordinates in
+close-range photogrammetry,”Photogrammetric engineering & remote
+sensing, vol. 81, no. 2, pp. 103–107, 2015.
+[37] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,”
+inInternational Conference on Learning Representations, 2019.
+[38] D. G. Lowe, “Distinctive image features from scale-invariant keypoints,”
+International journal of computer vision, vol. 60, no. 2, pp. 91–110,
+2004.
+[39] M. A. Fischler and R. C. Bolles, “Random sample consensus: a paradigm
+for model fitting with applications to image analysis and automated
+cartography,”Commun. ACM, vol. 24, no. 6, p. 381–395, jun 1981.
+[40] D. Bar ´ath, J. Noskova, M. Ivashechkin, and J. Matas, “Magsac++, a
+fast, reliable and accurate robust estimator,” inIEEE/CVF Conference
+on Computer Vision and Pattern Recognition (CVPR), 2020, pp. 1301–
+1309.
+[41] E. Rublee, V . Rabaud, K. Konolige, and G. Bradski, “Orb: An efficient
+alternative to sift or surf,” inInternational Conference on Computer
+Vision (ICCV), 2011, pp. 2564–2571.
+[42] S. Leutenegger, M. Chli, and R. Y . Siegwart, “Brisk: Binary robust
+invariant scalable keypoints,” inInternational Conference on Computer
+Vision (ICCV), 2011, pp. 2548–2555.
+[43] J. Revaud, P. Weinzaepfel, C. R. de Souza, and M. Humenberger, “R2D2:
+repeatable and reliable detector and descriptor,” inNeurIPS, 2019.
+[44] J. Sun, Z. Shen, Y . Wang, H. Bao, and X. Zhou, “LoFTR: Detector-free
+local feature matching with transformers,”CVPR, 2021.
+[45] R. Arandjelovi ´c, P. Gronat, A. Torii, T. Pajdla, and J. Sivic, “Netvlad:
+Cnn architecture for weakly supervised place recognition,”IEEE Trans-
+actions on Pattern Analysis and Machine Intelligence, vol. 40, no. 6,
+pp. 1437–1451, 2018.
+[46] F. Radenovi ´c, G. Tolias, and O. Chum, “Fine-tuning cnn image retrieval
+with no human annotation,”IEEE Transactions on Pattern Analysis and
+Machine Intelligence, vol. 41, no. 7, pp. 1655–1668, 2019.
+[47] M. Oquab, T. Darcet, T. Moutakanni, H. V o, M. Szafraniec, V . Khalidov,
+P. Fernandez, D. Haziza, F. Massa, A. El-Noubyet al., “Dinov2:
+Learning robust visual features without supervision,”arXiv preprint
+arXiv:2304.07193, 2023.
+[48] H. J ´egou, M. Douze, C. Schmid, and P. P ´erez, “Aggregating local de-
+scriptors into a compact image representation,” inIEEE/CVF Conference
+on Computer Vision and Pattern Recognition (CVPR), 2010, pp. 3304–
+3311.

@@ -1,0 +1,43 @@
+{
+  "area_size_meters": 5000.0,
+  "bounds": {
+    "epsg3857": {
+      "bottom": 4545175.354340558,
+      "left": -13630165.271218073,
+      "right": -13625165.271218073,
+      "top": 4550175.354340558
+    },
+    "epsg4326": {
+      "east": -122.396942117897,
+      "north": 37.79264910520394,
+      "south": 37.75714663269258,
+      "west": -122.44185788210295
+    }
+  },
+  "center_lat": 37.7749,
+  "center_lon": -122.4194,
+  "crs": "EPSG:3857",
+  "height_px": 4096,
+  "missing_tile_count": 0,
+  "output_size_px": 4096,
+  "pixel_grid_note": "Raster bounds match the requested STHN chip extent when output_size_px is set; otherwise bounds are snapped to the EPSG:3857 Web Mercator pixel grid at the requested zoom.",
+  "requested_bounds": {
+    "epsg3857": {
+      "bottom": 4545175.354340558,
+      "left": -13630165.271218073,
+      "right": -13625165.271218073,
+      "top": 4550175.354340558
+    },
+    "epsg4326": {
+      "east": -122.396942117897,
+      "north": 37.79264910520394,
+      "south": 37.75714663269258,
+      "west": -122.44185788210295
+    }
+  },
+  "resolution_m_per_pixel": 1.220703125,
+  "tile_count": 306,
+  "tile_url_template": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  "width_px": 4096,
+  "zoom": 17
+}

@@ -1,0 +1,1 @@
+Write a detailed .md file to describe the repository, I want the full structure to be known, then each coding file to be explained

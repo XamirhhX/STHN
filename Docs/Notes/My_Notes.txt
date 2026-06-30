@@ -1,0 +1,28 @@
+Global search
+
+Level 17
+
+50x each angle 
+
+Could be 25km x 25km or 50km x 50km 
+
+4 degree error 
+
+Center is our position and we estimate
+
+We shift tiles by half دوره تناوب
+
+Resnet
+
+Feed forward
+
+No Raster, Circular, 3 tile threshold (could change) Then we give it all to IHN
+
+Save how much time it took for the search. The one it took 1ms for 2080 
+
+
+--------
+
+What others group of students do?
+
+Different crops in the third paper, accepting in levels not once

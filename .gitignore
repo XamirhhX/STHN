@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environments
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated outputs and bulky local artifacts
+Artifacts/*
+!Artifacts/README.md
+Results/
+04_Results/
+cache/
+test/
+datasets/
+resources/
+Tiles/
+Patch_Dataset/
+
+# Data, model, and media artifacts
+*.h5
+*.hdf5
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.avi
+*.mov
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+*.npy
+*.npz
+*.pkl
+*.pt
+*.pth
+*.ckpt
+
+# Large document binaries should stay outside Git unless intentionally tracked.
+*.pdf
+*.docx
+*.pptx
+*.xlsx

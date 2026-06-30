@@ -1,0 +1,47 @@
+{
+  "mode": "full",
+  "location": {
+    "latitude": 30.886021,
+    "longitude": 57.895202
+  },
+  "area": {
+    "width_meters": 5000,
+    "height_meters": 5000
+  },
+  "imagery": {
+    "source": "satellite",
+    "zoom": 17,
+    "tile_url_template": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+  },
+  "output": {
+    "folder": "../Results/preset-iran-lut-kaluts-model-demo",
+    "size_px": 4096,
+    "unique_folder": true
+  },
+  "download": {
+    "retries": 3,
+    "timeout_seconds": 20,
+    "user_agent": "geotiff-scripts/0.1 (+https://example.invalid/local-tool)",
+    "max_tiles": 400,
+    "use_cache": true
+  },
+  "patches": {
+    "enabled": true,
+    "patch_size": 512,
+    "stride": null,
+    "split_ratios": [0.8, 0.1, 0.1],
+    "seed": 1337
+  },
+  "hdf5": {
+    "enabled": true,
+    "compression": "gzip"
+  },
+  "sthn": {
+    "enabled": true,
+    "dataset_name": "satellite_0_thermalmapping_135_train",
+    "database_size": 1536,
+    "query_size": 512,
+    "stride": 512,
+    "compression": "gzip"
+  }
+}

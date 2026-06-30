@@ -1,0 +1,8 @@
+rasterio
+pyproj
+mercantile
+numpy
+pillow
+requests
+h5py
+tqdm

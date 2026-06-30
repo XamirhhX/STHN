@@ -1,0 +1,12 @@
+
+At the start of the flight, and once the camera angle becomes suitable, assuming an altitude of at least 500 meters, the camera's field of view will cover approximately **1 × 1 km** (slightly less). Therefore, a search range of **25 times the field of view in both width and length** appears sufficient, resulting in coverage of a **50 × 50 km** area.
+
+For this search, **Google Maps Level-16 tiles** will be used. Each pixel corresponds to approximately **2 × 2 meters**, providing natural terrain features at an appropriate scale for successful wide-area search.
+
+The proposed approach uses **two grids of Level-16 tiles**. Within each grid, the tiles tessellate the target area without overlap. However, the horizontal and vertical boundaries of the two grids are shifted by **half a tile period** relative to each other. As a result, each grid contains **25 × 25 = 625 tiles**, for a total of **1,250 tiles** to be processed during similarity matching.
+
+Feature embeddings for all tiles are precomputed and stored in advance. Tile evaluation begins from the center of the initial estimated location and proceeds in a **spiral pattern**, gradually examining more distant tiles to find a match. The **top three candidate matches** are identified for further evaluation, and if the matching error falls below a predefined threshold, the search is terminated early.
+
+Assuming a matching speed of **100 frames per second**, the worst-case execution time for this stage is approximately **13 seconds**, although the average time may be significantly lower depending on the accuracy of the initial estimate.
+
+Finally, the **top three candidate tiles**, along with their overlapping tiles from the other grid (**3 × [1 + 4] = 15 tiles in total**), are passed to the **homography estimation network**.
